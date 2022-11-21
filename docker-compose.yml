@@ -1,0 +1,60 @@
+version: "3.8"
+services:
+  tg:
+    build:
+      context: .
+      dockerfile: docker/base/Dockerfile
+    command: python3 tg.py
+    volumes:
+      - .:/code
+    links:
+      - db
+      - dbmate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SRVC_CONFIG=etc/local.json
+
+  loader:
+    build:
+      context: .
+      dockerfile: docker/base/Dockerfile
+    command: python3 loader.py
+    volumes:
+      - .:/code
+    links:
+      - db
+      - dbmate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - SRVC_CONFIG=etc/local.json
+
+  db:
+    image: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=tgbot
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dbmate:
+    image: amacneil/dbmate
+    command: -d "/code/etc/db/migrations" up
+    volumes:
+      - .:/code
+    links:
+      - db
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/tgbot?sslmode=disable

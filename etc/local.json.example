@@ -1,0 +1,7 @@
+{
+  "debug": true,
+  "db": {
+    "dsn": "postgresql://postgres:postgres@db/tgbot"
+  },
+  "tg_token": "qwe"
+}
