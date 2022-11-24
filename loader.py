@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 
 from asyncpg import UniqueViolationError
 
@@ -28,15 +29,19 @@ async def run():
         with open("words.txt", "r") as file:
             db_pool = await db.get_conn(conf['db'])
             words_file = file.readlines()
-            words_forms = [WordForm(word=word.lower().rstrip()) for word in words_file]
+            words_forms = [
+                WordForm(word=word.lower().rstrip(), difficulty=random.choice([1, 2, 3]))
+                for word in words_file
+            ]
             try:
                 await words.create_many_words(db_pool, words_forms)
             except UniqueViolationError:
                 pass
-            await db.close(db_pool)
+            finally:
+                print(await db_pool.fetchrow(f"SELECT count(*) FROM {words.TABLE}"))
+                await db.close(db_pool)
+
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
-
-

@@ -1,4 +1,5 @@
 from aiogram import Bot
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from misc.aiogram import MainDispatcher
 from .handlers.base import send_on_start
@@ -7,8 +8,10 @@ from .handlers.word_game import (
     send_rules,
     send_on_stop_game,
     send_on_end_game,
-    handle_answer
+    handle_answer,
+    create_game
 )
+from .fsm import FSM_create_game
 
 
 class State(object):
@@ -16,7 +19,7 @@ class State(object):
         super().__init__()
         self.conf = conf
         self.bot = Bot(token=conf["tg_token"])
-        self.dp = MainDispatcher(self.bot)
+        self.dp = MainDispatcher(self.bot, storage=MemoryStorage())
         self.dp.config = self.conf
 
 
@@ -48,6 +51,11 @@ def register(state: State):
         state='*'
     )
     state.dp.register_message_handler(
+        create_game,
+        state=FSM_create_game.difficulty
+    )
+    state.dp.register_message_handler(
         handle_answer,
         state='*'
     )
+

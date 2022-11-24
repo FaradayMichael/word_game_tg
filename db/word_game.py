@@ -10,10 +10,12 @@ TABLE = "word_game"
 
 async def create_game(
         conn: db.Connection,
-        user: User
+        user: User,
+        difficulty: int = 1
 ) -> Optional[WordGame]:
     word_game = WordGameForm(
         user_id=user.user_id,
+        difficulty=difficulty,
         ctime=datetime.datetime.now()
     )
     result = await db.create(conn, TABLE, word_game.dict())

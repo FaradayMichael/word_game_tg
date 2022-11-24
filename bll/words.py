@@ -14,13 +14,14 @@ logger = logging.getLogger(__name__)
 async def find_answer_word_by_letter(
         conn: db.Connection,
         letter: str,
-        game: WordGame
+        game: WordGame,
 ) -> Optional[Word]:
-    values = [game.id]
+    values = [game.id, game.difficulty]
 
     game_words_ids_query = get_words_ids_by_game_query()
     query = f"SELECT * FROM {WORDS_TABLE} " \
             f"WHERE id NOT IN ({game_words_ids_query}) " \
+            f"AND difficulty <= $2 " \
             f"AND word SIMILAR TO '{letter}%' " \
             f"ORDER BY random() " \
             f"LIMIT 1"

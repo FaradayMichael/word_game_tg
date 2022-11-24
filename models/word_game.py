@@ -13,6 +13,7 @@ class WordGameForm(BaseModel):
     ctime: Optional[datetime.datetime] = Field(None, nullable=True)
     etime: Optional[datetime.datetime] = Field(None, nullable=True)
     user_id: int
+    difficulty: int = 1
     is_finished: bool = False
 
 

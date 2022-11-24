@@ -1,6 +1,8 @@
 from aiogram import types
 import random
 
+from aiogram.dispatcher import FSMContext
+
 from bll.users import get_or_create_user
 from bll.word_game_base import get_answer_word
 from bll.words import is_word_already_in_history, is_word_follow_rules, get_last_game_word
@@ -11,28 +13,38 @@ from db import (
 )
 from db.word_game_history import get_last_history_record, create_game_history
 from misc.aiogram import MainDispatcher
+from misc.consts import DIFFICULTY
 from models.word_game_history import WordGameHistoryForm, AnswerSource
+from services.tg.fsm import FSM_create_game
 
 
 async def send_rules(msg: types.Message):
     await msg.answer(f"ajajaja")
 
 
-async def send_on_start_game(msg: types.Message):
+async def send_on_start_game(msg: types.Message, state: FSMContext):
+    kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    kb.add(*DIFFICULTY)
+    await msg.answer("Choice difficulty:", reply_markup=kb)
+    await state.set_state(FSM_create_game.difficulty)
+
+
+async def create_game(msg: types.Message, state: FSMContext):
     dp = MainDispatcher.get_current()
     conn = dp.db_pool
-
     user = await get_or_create_user(conn, msg.from_user.id)
 
     game = await word_game.get_game_by_user_id(conn, user.user_id)
     if game is None:
-        game = await word_game.create_game(conn, user)
-        await msg.answer(f"Game created {game.id}")
+        difficulty = int(msg.text)
+        game = await word_game.create_game(conn, user, difficulty)
+        await msg.answer(f"Game created {game.id}, difficulty {game.difficulty}")
         # if random.getrandbits(1):
         if True:
             await msg.answer("Your turn")
     else:
         await msg.answer("Game has already started")
+    await state.reset_state()
 
 
 async def send_on_stop_game(msg: types.Message):
